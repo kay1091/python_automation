@@ -1,0 +1,6 @@
+# config/config.yaml
+file_paths:
+  sfid_file: "input/SFID_file.xlsx"
+  sfdc_dump_file: "input/SFDC_dump.xlsx"
+  template_file: "input/Weekly_Template.xlsx"
+  output_file: "output/Updated_Template.xlsx"
