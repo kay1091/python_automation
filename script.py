@@ -189,11 +189,10 @@ template_dict = {
 
 
 for i in range(max(len(sfid_df), len(sfdc_dump_df))):
-    template_row = {}
-
+    template_row = template_dict.copy()
     # Get data from both dataframes based on index
-    sfid_row = sfid_df.iloc[i] if i < len(sfid_df) else {}
-    sfdc_row = sfdc_dump_df.iloc[i] if i < len(sfdc_dump_df) else {}
+    sfid_row = sfid_df.iloc[i] if i < len(sfid_df) else pd.Series()
+    sfdc_row = sfdc_dump_df.iloc[i] if i < len(sfdc_dump_df) else pd.Series()
 
     for col, default in template_dict.items():
          if col == "Account Name":
@@ -440,27 +439,37 @@ for i in range(max(len(sfid_df), len(sfdc_dump_df))):
 
 # --- Step 4: Load and Update Template ---
 try:
-    os.makedirs("output", exist_ok=True) # Create output directory if it doesn't exist
+    # Create output directory if it doesn't exist
+    os.makedirs("output", exist_ok=True)
     template_wb = openpyxl.load_workbook(TEMPLATE_FILE)
     template_ws = template_wb[TEMPLATE_SHEET_NAME]
 
-    # Get existing data
-    existing_data = []
-    for row in template_ws.iter_rows(min_row=2, values_only=True):
-         existing_data.append(list(row))
+    # Get header row to ensure column alignment
+    header_row = [cell.value for cell in template_ws[1]]
+    
+    # Clear existing data (excluding header)
+    if template_ws.max_row > 1:
+        template_ws.delete_rows(2, template_ws.max_row - 1)
 
-    template_ws.delete_rows(2, template_ws.max_row)  # Clear existing data
-    #Append existing data back
-    for row in existing_data:
-         template_ws.append(row)
+    # Convert template_data to DataFrame with correct column order
+    df = pd.DataFrame(template_data)
+    df = df.reindex(columns=header_row)  # Reorder columns to match template
 
-    for row in dataframe_to_rows(pd.DataFrame(template_data), index=False, header=False):
+    # Append data rows
+    for row in dataframe_to_rows(df, index=False, header=False):
         template_ws.append(row)
 
+    # Apply date formatting for specific columns
+    for row in template_ws.iter_rows(min_row=2, max_row=template_ws.max_row):
+        for cell in row:
+            if isinstance(cell.value, pd.Timestamp):  # Check if cell contains a date
+                cell.value = cell.value.strftime("%d/%m/%Y")  # Convert to dd/mm/yyyy format
+                
     template_wb.save(OUTPUT_FILE)
     print(f"Template updated successfully: {OUTPUT_FILE}")
+    
 except FileNotFoundError:
     print(f"Error: Could not find template file '{TEMPLATE_FILE}'. Please ensure it exists in the 'input' directory.")
 except Exception as e:
     print(f"An error occurred: {e}")
-    exit()
+    exit()  

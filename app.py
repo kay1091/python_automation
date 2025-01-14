@@ -30,7 +30,6 @@ def generate_fake_data(num_records=10, seed=None):
     sfid_opp_id_map = {fake.uuid4()[:8].upper(): fake.uuid4()[:8].upper() for _ in range(num_records)}
     sfids = list(sfid_opp_id_map.keys())
 
-
     # --- Data Generation ---
     sfid_dataframe_data = []
     sfdc_dataframe_data = []
@@ -42,6 +41,9 @@ def generate_fake_data(num_records=10, seed=None):
         close_date = fake.date_between(start_date='-1y', end_date='today')
         created_date = fake.date_between(start_date='-2y', end_date=close_date)
 
+        # Generate random amount
+        random_amount = round(random.uniform(1_000_000, 50_000_000), 2)  # Random number between 1M and 50M
+
         # SFID Entry
         sfid_entry = {
             "Type": fake.random_element(["New", "Existing"]),
@@ -49,7 +51,7 @@ def generate_fake_data(num_records=10, seed=None):
             "Account Name": account_name,
             "SFID": sfid,
             "Opportunity Name": opportunity_name,
-            "$ Value (M)": round(fake.random_number(digits=2, fix_len=True) / 10, 2),
+            "$ Value (M)": round(random_amount / 1_000_000, 2),  # Convert to millions
             "Opportunity Description": fake.sentence(),
             "Client Partner": fake.name(),
             "Partner Details": fake.sentence(),
@@ -78,9 +80,9 @@ def generate_fake_data(num_records=10, seed=None):
             "SBU": fake.random_element(["SBU1", "SBU2", "SBU3"]),
             "Billing Country": fake.country(),
             "Amount Currency": "USD",
-            "Amount": round(fake.random_number(digits=5), 2),
+            "Amount": random_amount,  # Randomly generated amount
             "Expected Revenue Currency": "USD",
-            "Expected Revenue": round(fake.random_number(digits=4), 2),
+            "Expected Revenue": round(random.uniform(1_000, 1_000_000), 2),  # Random revenue
             "Competitor Details Old": fake.sentence(),
             "Close Date": close_date,
             "Next Step": fake.sentence(),
@@ -107,7 +109,7 @@ def generate_fake_data(num_records=10, seed=None):
             "Deal Type": fake.random_element(["Type X", "Type Y"]),
             "Industry Solutions": fake.random_element(["Solution1", "Solution2"]),
             "Amount (converted) Currency": "USD",
-            "Amount (converted)": round(fake.random_number(digits=5), 2),
+            "Amount (converted)": random_amount,  # Randomly generated converted amount
             "Virtusa/Polaris": fake.random_element(["Virtusa", "Polaris"]),
             "Quality of Revenue": fake.random_element(["High", "Medium", "Low"]),
             "Proposal Type": fake.random_element(["Type P", "Type Q"]),
@@ -122,53 +124,3 @@ def generate_fake_data(num_records=10, seed=None):
     sfdc_dump_df = pd.DataFrame(sfdc_dataframe_data)
 
     return sfid_df, sfdc_dump_df
-
-
-def main():
-    # Create directories if they don't exist
-    os.makedirs("input", exist_ok=True)
-    os.makedirs("output", exist_ok=True)
-
-    num_records = 20  # Set num records as per requirement
-    sfid_df, sfdc_dump_df = generate_fake_data(num_records=num_records, seed=42)
-
-
-    try:
-        # Save data to Excel files
-        sfid_df.to_excel("input/SFID_file.xlsx", index=False)
-        sfdc_dump_df.to_excel("input/SFDC_dump.xlsx", index=False)
-        
-         #Create empty template with just a header:
-        template_df = pd.DataFrame(columns=[
-            "Account Name", "SFID", "Created Date", "Opportunity Name", "Opportunity Description",
-            "Group SBU", "Created By", "Stage", "Est Deal Value in USD", "Opp Type", "Vertical Practice",
-            "Tech. Practice", "Service Offering", "Engagement Type", "Probability", "Close Date",
-            "Next Steps", "Loss Stage", "Lost Reason", "Age", "BOLT", "Doc. Recvd. Date", "Category",
-            "Partner Details", "Proposed Sub. Date", "Domain Practice", "Tech Practice", "Solution SPOCs",
-            "Delivery SPOC", "Proposal Owner", "Allocation% Proposal Owner 1", "Proposal Owner 2",
-            "Allocation% Proposal Owner 2", "Proposal Writer", "Allocation% Proposal Writer 1",
-            "Proposal Writer 2", "Allocation% Proposal Writer 2", "Orals SPOC", "Bid Director",
-            "Proposal Updates", "Proposal Status", "Actual Sub. Date", "Commercial Value", "DSC",
-            "Opportunity Stage", "Post Sub. Activity", "PSA Activity Status", "PSA Activity Cls. Date",
-            "PSA Activity Update", "Est. Deal Value", "Large Deal", "SBU Mapping", "Created in Week",
-            "Submitted in Week", "Closing in Week", "PSA Comp. in Week", "Sub. Dt. Mapping",
-            "Cl. Dt. Mapping", "PSA Comp. Dt. Mapping", "Opp. Status", "Sb. FY", "Sb. Qtr.",
-             "Cl. FY", "Cl. QTR", "TCV Brk. Up", "BFS/ETS", "Direct/ Related",
-            "OB Related Status", "TCV Related Status"
-         ])
-        
-        #Save template to excel
-        template_file = "input/Weekly_Template.xlsx"
-        writer = pd.ExcelWriter(template_file, engine = 'xlsxwriter')
-        template_df.to_excel(writer, sheet_name="SFDC",index=False)
-        writer.close()
-
-
-        print("Random test data has been generated and saved.")
-
-    except Exception as e:
-        print(f"Error generating or saving excel file: {e}")
-
-
-if __name__ == "__main__":
-    main()
